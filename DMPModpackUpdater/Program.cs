@@ -72,9 +72,10 @@ namespace DMPModpackUpdater
             excludeList.Add("darkmultiplayer/");
             excludeList.Add("squad/");
             excludeList.Add("squadexpansion/");
-            containsExcludeList.Add(".log");
             containsExcludeList.Add("modulemanager.configcache");
             containsExcludeList.Add("modulemanager.configsha");
+            containsExcludeList.Add("modulemanager.physics");
+            containsExcludeList.Add("modulemanager.techtree");
             kspList.Add("KSP.x86_64");
             kspList.Add("KSP.x86");
             kspList.Add("KSP_x64.exe");
