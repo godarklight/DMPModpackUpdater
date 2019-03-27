@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace DMPModpackUpdater
 {
@@ -18,11 +16,10 @@ namespace DMPModpackUpdater
         private static string serverIndex;
         private static string cachePath;
         private static string gamedataPath;
-        private static bool useCurrentDirectory = false;
         private static bool enableDelete = false;
         private static bool enableRun = true;
         private static bool enableStock = false;
-        private static bool skipSha = false;
+        private static string kspArgs = "";
         private static string runFile = null;
 
         public static void Main(string[] args)
@@ -52,10 +49,6 @@ namespace DMPModpackUpdater
                 {
                     enableRun = false;
                 }
-                if (arg == "--no-check")
-                {
-                    skipSha = true;
-                }
                 if (arg.StartsWith("--run=", StringComparison.Ordinal))
                 {
                     runFile = arg.Substring("--run=".Length);
@@ -63,6 +56,10 @@ namespace DMPModpackUpdater
                 if (arg.StartsWith("--ksp-path=", StringComparison.Ordinal))
                 {
                     kspPath = arg.Substring("--ksp-path=".Length);
+                }
+                if (arg.StartsWith("--ksp-args=", StringComparison.Ordinal))
+                {
+                    kspArgs = arg.Substring("--ksp-args=".Length);
                 }
             }
             if (kspPath == null)
@@ -121,9 +118,9 @@ namespace DMPModpackUpdater
             Console.WriteLine("--stock: Reverts GameData to stock, implies --delete");
             Console.WriteLine("--delete: Delete mods that are not on the server, instead of only updating or adding");
             Console.WriteLine("--no-run: Do not attempt to start KSP");
-            Console.WriteLine("--no-check: Do not compare hashes against server (only adds missing files)");
-            Console.WriteLine("--ksp-path=[path]: Run in specified folder, rather than the program location");
             Console.WriteLine("--run=[ProgramName.exe]: Runs this program instead of trying to find and start KSP.");
+            Console.WriteLine("--ksp-path=[path]: Run in specified folder, rather than the program location");
+            Console.WriteLine("--ksp-args=\"args\": Run KSP with these arguments, example: --ksp-args=\"-force-d3d11 -popupwindow -dmp dmp://localhost:6702\"");
             Console.WriteLine("--help: Displays this message");
             Console.WriteLine();
             Console.WriteLine("Press any key to exit");
@@ -271,32 +268,21 @@ namespace DMPModpackUpdater
             {
                 string fileCachePath = Path.Combine(cachePath, kvp.Value + ".bin");
                 string filePath = Path.Combine(gamedataPath, kvp.Key);
+                Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+                bool isUpdate = false;
                 if (File.Exists(filePath))
                 {
-                    if (!skipSha)
-                    {
-                        byte[] testBytes = File.ReadAllBytes(filePath);
-                        string testSha256Sum = CalculateSHA256Hash(testBytes);
-                        if (testSha256Sum != kvp.Value)
-                        {
-                            Console.WriteLine("Updated " + kvp.Key);
-                            File.Copy(fileCachePath, filePath, true);
-                        }
-                        else
-                        {
-                            Console.WriteLine("Checked " + kvp.Key);
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("Skipped checking " + kvp.Key);
-                    }
+                    isUpdate = true;
+                    File.Delete(filePath);
+                }
+                File.Copy(fileCachePath, filePath);
+                if (isUpdate)
+                {
+                    Console.WriteLine("Updated/Checked " + kvp.Key);
                 }
                 else
                 {
                     Console.WriteLine("Added " + kvp.Key);
-                    Directory.CreateDirectory(Path.GetDirectoryName(filePath));
-                    File.Copy(fileCachePath, filePath);
                 }
             }
         }
@@ -308,7 +294,7 @@ namespace DMPModpackUpdater
                 string filePath = Path.Combine(kspPath, runFile);
                 if (File.Exists(filePath))
                 {
-                    StartProcess(filePath);
+                    StartProcess(filePath, kspArgs);
                 }
                 else
                 {
@@ -323,7 +309,7 @@ namespace DMPModpackUpdater
                     if (File.Exists(filePath))
                     {
                         Console.WriteLine("Starting:" + testFile);
-                        StartProcess(filePath);
+                        StartProcess(filePath, kspArgs);
                         return;
                     }
                     Console.WriteLine("KSP executable not found");
@@ -331,24 +317,9 @@ namespace DMPModpackUpdater
             }
         }
 
-        private static void StartProcess(string fileName)
+        private static void StartProcess(string fileName, string args)
         {
-            Process.Start(fileName);
-        }
-
-        private static string CalculateSHA256Hash(byte[] fileData)
-        {
-            StringBuilder sb = new StringBuilder();
-            using (SHA256Managed sha = new SHA256Managed())
-            {
-                byte[] fileHashData = sha.ComputeHash(fileData);
-                //Byte[] to string conversion adapted from MSDN...
-                for (int i = 0; i < fileHashData.Length; i++)
-                {
-                    sb.Append(fileHashData[i].ToString("x2"));
-                }
-            }
-            return sb.ToString();
+            Process.Start(fileName, args);
         }
     }
 }
