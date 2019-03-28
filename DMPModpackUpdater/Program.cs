@@ -16,6 +16,7 @@ namespace DMPModpackUpdater
         private static string serverIndex;
         private static string cachePath;
         private static string gamedataPath;
+        private static int checkedFiles;
         private static bool enableDelete = false;
         private static bool enableRun = true;
         private static bool enableStock = false;
@@ -72,6 +73,7 @@ namespace DMPModpackUpdater
             excludeList.Add("darkmultiplayer/");
             excludeList.Add("squad/");
             excludeList.Add("squadexpansion/");
+            containsExcludeList.Add(".log");
             containsExcludeList.Add("modulemanager.configcache");
             containsExcludeList.Add("modulemanager.configsha");
             containsExcludeList.Add("modulemanager.physics");
@@ -84,6 +86,7 @@ namespace DMPModpackUpdater
             int syncError = LoadServerCache();
             if (syncError == 0)
             {
+                Console.WriteLine("Checking files...");
                 if (enableDelete)
                 {
                     DeleteFromGameData();
@@ -157,7 +160,7 @@ namespace DMPModpackUpdater
                     {
                         if (filePath.ToLower().StartsWith(ignoreString, StringComparison.Ordinal))
                         {
-                            Console.WriteLine("Skipping ignored file: " + filePath);
+                            //Console.WriteLine("Skipping ignored file: " + filePath);
                             skipFile = true;
                         }
                     }
@@ -165,7 +168,7 @@ namespace DMPModpackUpdater
                     {
                         if (filePath.ToLower().Contains(ignoreString))
                         {
-                            Console.WriteLine("Skipping ignored file: " + filePath);
+                            //Console.WriteLine("Skipping ignored file: " + filePath);
                             skipFile = true;
                         }
                     }
@@ -201,7 +204,7 @@ namespace DMPModpackUpdater
                 {
                     if (trimmedPath.ToLower().StartsWith(ignoreString, StringComparison.Ordinal))
                     {
-                        Console.WriteLine("Skipping ignored file: " + filePath);
+                        //Console.WriteLine("Skipping ignored file: " + filePath);
                         skipFile = true;
                     }
                 }
@@ -209,7 +212,7 @@ namespace DMPModpackUpdater
                 {
                     if (trimmedPath.ToLower().Contains(ignoreString))
                     {
-                        Console.WriteLine("Skipping ignored file: " + filePath);
+                        //Console.WriteLine("Skipping ignored file: " + filePath);
                         skipFile = true;
                     }
                 }
@@ -219,7 +222,7 @@ namespace DMPModpackUpdater
                 }
                 if (!filePath.ToLower().StartsWith(gamedataPath.ToLower(), StringComparison.Ordinal))
                 {
-                    Console.WriteLine("Not touching " + filePath + " as it is outside of GameData (symlink?)");
+                    //Console.WriteLine("Not touching " + filePath + " as it is outside of GameData (symlink?)");
                     continue;
                 }
                 if (!serverFiles.ContainsKey(trimmedPath))
@@ -237,7 +240,7 @@ namespace DMPModpackUpdater
                 {
                     if (trimmedPath.ToLower().StartsWith(ignoreString, StringComparison.Ordinal))
                     {
-                        Console.WriteLine("Skipping ignored file: " + trimmedPath);
+                        //Console.WriteLine("Skipping ignored file: " + trimmedPath);
                         skipDir = true;
                     }
                 }
@@ -245,7 +248,7 @@ namespace DMPModpackUpdater
                 {
                     if (trimmedPath.ToLower().Contains(ignoreString))
                     {
-                        Console.WriteLine("Skipping ignored file: " + trimmedPath);
+                        //Console.WriteLine("Skipping ignored file: " + trimmedPath);
                         skipDir = true;
                     }
                 }
@@ -279,13 +282,15 @@ namespace DMPModpackUpdater
                 File.Copy(fileCachePath, filePath);
                 if (isUpdate)
                 {
-                    Console.WriteLine("Updated/Checked " + kvp.Key);
+                    //Console.WriteLine("Updated/Checked " + kvp.Key);
+                    checkedFiles++;
                 }
                 else
                 {
                     Console.WriteLine("Added " + kvp.Key);
                 }
             }
+            Console.WriteLine("Updated/Checked " + checkedFiles + " existing files.");
         }
 
         private static void RunKSP()
